@@ -1,0 +1,88 @@
+import React from "react";
+
+import { makeStyles } from "@material-ui/core/styles";
+import { Button } from "@material-ui/core";
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    backgroundColor: "blue",
+    color: "white",
+    fontSize: "13px",
+    boxShadow: "none",
+    "&:hover": {
+      boxShadow: "none",
+    },
+  },
+  text: {
+    color: "blue",
+    fontSize: "13px",
+  },
+  secondary: {
+    backgroundColor: "gray",
+    color: "darkGray",
+    fontSize: "13px",
+    boxShadow: "none",
+  },
+  default: {
+    backgroundColor: "darkGray",
+    color: "darkGray",
+    fontSize: "13px",
+    boxShadow: "none",
+  },
+}));
+
+const DefaultButton = ({ action, type, children, ...props }) => {
+  const classes = useStyles();
+
+  const classFromType = () => {
+    switch (type) {
+      case "primary":
+        return classes.root;
+      case "secondary":
+        return classes.secondary;
+      case "default":
+        return classes.default;
+      case "text":
+        return classes.text;
+      default:
+        return classes.primary;
+    }
+  };
+
+  const variantFromType = () => {
+    switch (type) {
+      case ("primary", "secondary", "default"):
+        return "contained";
+      case "text":
+        return "text";
+      default:
+        return "contained";
+    }
+  };
+
+  const colorFromType = () => {
+    switch (type) {
+      case ("primary", "text"):
+        return "primary";
+      case "secondary":
+        return "secondary";
+      case "default":
+        return "secondary";
+      default:
+        return "primary";
+    }
+  };
+
+  return (
+    <Button
+      color={colorFromType()}
+      {...props}
+      className={classFromType()}
+      variant={variantFromType()}
+    >
+      {children}
+    </Button>
+  );
+};
+
+export default DefaultButton;
