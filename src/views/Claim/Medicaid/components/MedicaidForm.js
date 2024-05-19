@@ -160,9 +160,9 @@ function MedicaidForm(props) {
     {
       id: "endTm",
       component: "timepicker",
-      placeholder: "Start time",
+      placeholder: "End time",
       label: "End time",
-      name: "startTm",
+      name: "endTm",
       disabled: props.mode && props.mode === "view" ? true : false,
     },
     {
@@ -307,10 +307,10 @@ function MedicaidForm(props) {
     console.log("[Auto Complete Detail]", item, source);
     if (item.category === "service") {
       console.log("[Item Category]", item, source);
-      const from = momen(new Date(`${source.dos} ${source.startTm}`));
+      const from = moment(new Date(`${source.dos} ${source.startTm}`));
       const end = moment(new Date(`${source.dos} ${source.endTm}`));
 
-      const diff = moment.duration(end.diff(start));
+      const diff = moment.duration(end.diff(from));
       const diffMin = parseFloat(diff.asMinutes(), 10);
       if (source.rate_per_min && source.rate_per_min > 0) {
         console.log("[DIFF MIN]", diff, diffMin, diffMin / source.rate_per_min);
@@ -360,6 +360,7 @@ function MedicaidForm(props) {
     source[name] = moment(new Date(value)).format("YYYY-MM-DD HH:mm");
     setIsRefresh(!isRefresh);
   };
+
   const titleHandler = () => {
     if (props.mode === "view") {
       return "View Claims Record";
@@ -538,7 +539,7 @@ function MedicaidForm(props) {
                       source={item}
                       {...details.find((d) => d.id === "startTm")}
                       value={item["startTm"] || "09:00"}
-                      onChange={timeInputHandler}
+                      onChange={inputDetailHandler}
                     />
                   </Grid>
                   <Grid item xs={12} md={2} sm={12}>
@@ -547,7 +548,7 @@ function MedicaidForm(props) {
                       source={item}
                       {...details.find((d) => d.id === "endTm")}
                       value={item["endTm"] || "10:00"}
-                      onChange={timeInputHandler}
+                      onChange={inputDetailHandler}
                     />
                   </Grid>
                   <Grid item xs={2} md={2} sm={12}>
