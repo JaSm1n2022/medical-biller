@@ -104,7 +104,7 @@ const Login = () => {
             <Grid container>
               <Grid item xs={12} md={12} sm={12}>
                 <Typography variant="h4">
-                  Sign in to Hospice Inventory System
+                  Sign in to Medical Biller System
                 </Typography>
                 <Typography variant="body">via Magic Link email</Typography>
               </Grid>

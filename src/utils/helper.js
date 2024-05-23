@@ -246,6 +246,51 @@ class Helper {
     }
     return value;
   }
+  static convertJsonIntoEft(jsonData) {
+    console.log("[Json Upload]", jsonData);
+    const efts = [];
+    // const record = {...jsonData};
+    jsonData.forEach((json, index) => {
+      const record = {};
+      if (json || JSON.stringify(json) !== "{}") {
+        console.log("[WHO AM I]", json);
+        record.uuid = index;
+        record.indexNumber = index + 1;
+
+        record.patient = json["NAME"]?.trim() || "";
+        record.service = json["PROC CD"]?.trim() || "";
+        record.modifier = json["MODIFIER"] || "";
+        record.serviceDesc = json["SERVICE DESCRIPTION"]?.trim() || "";
+        record.dos = json["FROM"] || "";
+        record.eos = json["TO"] || "";
+        record.billedAmt = json["BILLED AMT"] || "";
+        record.paidAmt = json["PAID AMT"] || "";
+        record.status = json["STATUS"] || "";
+        if (record.dos && record.dos.length === 5) {
+          record.dos = `0${record.dos}`;
+        }
+        if (record.dos?.length) {
+          record.dos = `20${record.dos.substring(4, 6)}-${record.dos.substring(
+            0,
+            2
+          )}-${record.dos.substring(2, 4)}`;
+        }
+        if (record.eos && record.eos.length === 5) {
+          record.eos = `0${record.eos}`;
+        }
+        if (record.eos?.length) {
+          record.eos = `20${record.eos.substring(4, 6)}-${record.eos.substring(
+            0,
+            2
+          )}-${record.eos.substring(2, 4)}`;
+        }
+        efts.push(record);
+      }
+    });
+    console.log("[EFTS]", efts);
+    return efts;
+  }
+  d;
 }
 
 export default Helper;

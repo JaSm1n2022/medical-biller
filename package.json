@@ -52,7 +52,8 @@
     "styled-components": "^5.3.3",
     "use-deep-compare-effect": "^1.8.1",
     "uuid": "^8.3.2",
-    "web-vitals": "^2.1.2"
+    "web-vitals": "^2.1.2",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.1/xlsx-0.20.1.tgz"
   },
   "resolutions": {
     "@react-pdf/font": "2.2.0"

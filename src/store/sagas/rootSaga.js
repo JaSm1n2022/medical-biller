@@ -4,6 +4,7 @@ import profileSaga from "./profileSaga";
 import patientSaga from "./patientSaga";
 import serviceSaga from "./serviceSaga";
 import claimSaga from "./claimSaga";
+import eftSaga from "./eftSaga";
 export function* rootSaga() {
   yield all([
     authSaga(),
@@ -11,5 +12,6 @@ export function* rootSaga() {
     patientSaga(),
     serviceSaga(),
     claimSaga(),
+    eftSaga(),
   ]);
 }

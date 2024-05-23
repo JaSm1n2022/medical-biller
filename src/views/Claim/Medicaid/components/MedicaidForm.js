@@ -207,9 +207,10 @@ function MedicaidForm(props) {
   useEffect(() => {
     console.log("[props distribution form]", props);
     const fm = {};
-    fm.orderDt = new Date();
-    fm.position = "-";
-    fm.facility = "-";
+
+    fm.billedDt = moment(new Date()).format("YYYY-MM-DD 17:00");
+    fm.paidOnDt = moment(new Date()).format("YYYY-MM-DD 17:00");
+    fm.paidIssuedDt = moment(new Date()).format("YYYY-MM-DD 17:00");
     setGeneralForm(fm);
     if (
       props.profileState &&
@@ -223,6 +224,7 @@ function MedicaidForm(props) {
       props.listServices({ companyId: userProfile.companyId });
     }
   }, []);
+  useEffect(() => {}, [props.item]);
   useEffect(() => {
     if (
       !isPatientCollection &&
@@ -251,7 +253,6 @@ function MedicaidForm(props) {
         e.name = e.code;
         e.label = e.name;
         e.value = e.name;
-        e.description = e.name;
         e.category = "service";
         services.push(e);
       });
@@ -280,14 +281,18 @@ function MedicaidForm(props) {
       event: "cancel",
       callback: () => {
         console.log("[Cancel me]");
-        props.onClose();
+        clearModalHandler();
       },
     },
   ];
   const inputGeneralHandler = ({ target }) => {
     console.log("[Target General]", target, generalForm);
     const source = { ...generalForm };
-    source[target.name] = target.value;
+    const val = target.value;
+    if (["paidAmt", "billedAmt"].includes(target.name)) {
+      val = parseFloat(target.value);
+    }
+    source[target.name] = val;
     setGeneralForm(source);
   };
   const inputDetailHandler = ({ target }, source) => {
@@ -306,15 +311,31 @@ function MedicaidForm(props) {
   const autoCompleteDetailInputHander = (item, source) => {
     console.log("[Auto Complete Detail]", item, source);
     if (item.category === "service") {
+      source.service = item;
       console.log("[Item Category]", item, source);
-      const from = moment(new Date(`${source.dos} ${source.startTm}`));
-      const end = moment(new Date(`${source.dos} ${source.endTm}`));
+      const newDos = moment(new Date(source.dos)).format("YYYY-MM-DD");
+      console.log("[Item Category 1]", newDos);
+      const from = moment(new Date(`${newDos} ${source.startTm}`));
+      const end = moment(new Date(`${newDos} ${source.endTm}`));
 
       const diff = moment.duration(end.diff(from));
       const diffMin = parseFloat(diff.asMinutes(), 10);
-      if (source.rate_per_min && source.rate_per_min > 0) {
-        console.log("[DIFF MIN]", diff, diffMin, diffMin / source.rate_per_min);
+      if (item.rate_per_min && item.rate_per_min > 0) {
+        console.log(
+          "[DIFF MIN]",
+          diffMin,
+          diffMin / parseInt(item.rate_per_min),
+          parseInt(diffMin / parseInt(item.rate_per_min, 10)) * item.rate
+        );
+        source.unit = parseInt(diffMin / parseInt(item.rate_per_min, 10));
+        source.billedAmt =
+          parseInt(diffMin / parseInt(item.rate_per_min, 10)) * item.rate;
+      } else {
+        source.billedAmt = item.rate;
+        source.unit = item.unit;
       }
+    } else if (item.category === "patient") {
+      source.patient = item;
     }
     setIsRefresh(!isRefresh);
   };
@@ -352,8 +373,9 @@ function MedicaidForm(props) {
   };
   const dateInputHandler = (value, name) => {
     const src = { ...generalForm };
+    console.log("[Date Input]", value, name, src);
     src[name] = moment(new Date(value)).format("YYYY-MM-DD HH:mm");
-    setIsRefresh(!isRefresh);
+    setGeneralForm(src);
   };
   const dateInputDetailHandler = (value, name, source) => {
     console.log("[Details]", value, name, source);
@@ -392,12 +414,7 @@ function MedicaidForm(props) {
   ) {
     setIsServiceCollection(false);
   }
-  const timeInputHandler = ({ target }) => {
-    console.log("[TARGET]", target.name, target.value);
-    const src = { ...generalForm };
-    src[target.name] = target.value;
-    setGeneralForm(src);
-  };
+
   console.log("[general form]", generalForm, detailForm);
   isProcessDone = isPatientListDone && isServiceListDone;
   return (
@@ -583,7 +600,7 @@ function MedicaidForm(props) {
                       }
                       source={item}
                       {...details.find((d) => d.id === "billedAmt")}
-                      value={item["billedAmt"] || 0}
+                      value={parseFloat(item["billedAmt"] || 0.0, 2)}
                       onChange={inputDetailHandler}
                     />
                   </Grid>
@@ -594,7 +611,7 @@ function MedicaidForm(props) {
                       }
                       source={item}
                       {...details.find((d) => d.id === "paidAmt")}
-                      value={item["paidAmt"] || 0}
+                      value={parseFloat(item["paidAmt"] || 0.0, 2)}
                       onChange={inputDetailHandler}
                     />
                   </Grid>

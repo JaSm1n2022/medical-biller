@@ -15,7 +15,6 @@ import { ACTION_STATUSES } from "utils/constants";
 import { Button, Grid } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 
-import HospiceTable from "components/Table/HospiceTable";
 import { ImportExport } from "@material-ui/icons";
 import Helper from "utils/helper";
 import * as FileSaver from "file-saver";
@@ -407,7 +406,7 @@ function ServiceFunction(props) {
                   />
                 </div>
               </Grid>
-              <HospiceTable
+              <ResultTable
                 columns={columns}
                 main={true}
                 grandTotal={grandTotal}

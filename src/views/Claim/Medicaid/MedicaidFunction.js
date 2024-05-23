@@ -15,7 +15,6 @@ import { ACTION_STATUSES } from "utils/constants";
 import { Button, Grid } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 
-import HospiceTable from "components/Table/HospiceTable";
 import { ImportExport } from "@material-ui/icons";
 import Helper from "utils/helper";
 import * as FileSaver from "file-saver";
@@ -36,6 +35,7 @@ import { attemptToDeleteClaim } from "store/actions/claimAction";
 import { resetDeleteClaimState } from "store/actions/claimAction";
 import FilterTable from "components/Table/FilterTable";
 import { profileListStateSelector } from "store/selectors/profileSelector";
+import ResultTable from "components/Table/ResultTable";
 const styles = {
   cardCategoryWhite: {
     "&,& a,& a:hover,& a:focus": {
@@ -86,6 +86,8 @@ function MedicaidFunction(props) {
   const [item, setItem] = useState(undefined);
   const [mode, setMode] = useState("create");
   const [isAddGroupButtons, setIsAddGroupButtons] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const createFormHandler = (data, mode) => {
     setItem(data);
@@ -147,7 +149,15 @@ function MedicaidFunction(props) {
       props.profileState.data.length
     ) {
       userProfile = props.profileState.data[0];
-      props.listClaims({ companyId: userProfile.companyId });
+      const dates = Helper.formatDateRangeByCriteriaV2("thisMonth");
+      setDateFrom(dates.from);
+      setDateTo(dates.to);
+      props.listClaims({
+        companyId: userProfile.companyId,
+        provider: "Medicaid",
+        from: dates.from,
+        to: dates.to,
+      });
     }
   }, []);
 
@@ -193,38 +203,59 @@ function MedicaidFunction(props) {
     props.deleteClaim(id);
   };
   const createClaimHandler = (general, details, mode) => {
-    console.log("[Create Claim Handler]", general, mode, userProfile);
-    /*
+    console.log("[Create Claim Handler]", general, details, mode, userProfile);
+
     const finalPayload = [];
     for (const payload of details) {
-    
-    const params = {
-      code: payload.code,
-      description: payload.description,
-      unit: payload.unit,
-      rate: payload.rate,
-      provider: payload?.provider,
-      companyId: userProfile.companyId,
-      updatedUser: {
-        name: userProfile.name,
-        userId: userProfile.id,
-        date: new Date(),
-      },
-    };
+      const params = {
+        provider: "Medicaid",
+        client_name: payload?.patient?.name,
+        client_id: payload?.patient?.id,
+        client_code: payload?.patient?.patientCd,
+        date_of_service: payload?.dos.split(" ")[0],
+        dos_start: payload?.startTm,
+        dos_end: payload?.endTm,
+        service_code: payload?.service?.code,
+        service_desc: payload?.service?.description,
+        service_id: payload?.service?.id,
+        billed_amount: payload?.billedAmt,
+        paid_amount: payload?.paidAmt || 0,
+        billed_on: general.billedDt,
+        eft: general.eftNumber,
+        paid_on: general.paidOnDt,
+        paid_issued: general.paidIssuedDt,
+        unit: payload?.unit,
+        companyId: userProfile.companyId,
+        updatedUser: {
+          name: userProfile.name,
+          userId: userProfile.id,
+          date: new Date(),
+        },
+      };
+
+      if (mode === "create") {
+        params.createdUser = {
+          name: userProfile.name,
+          userId: userProfile.companyId,
+          date: new Date(),
+        };
+        //  props.createClaim(params);
+      } else if (mode === "edit") {
+        params.id = payload.id;
+        // props.updateClaim(params);
+      }
+      finalPayload.push(params);
+    }
 
     if (mode === "create") {
-      params.createdUser = {
-        name: userProfile.name,
-        userId: userProfile.companyId,
-        date: new Date(),
-      };
-      props.createClaim(params);
+      console.log("[final payload]", finalPayload);
+      props.createClaim(finalPayload);
     } else if (mode === "edit") {
-      params.id = payload.id;
-      props.updateClaim(params);
+      console.log("[Final Payload]", finalPayload);
+      props.updateClaim(finalPayload);
     }
+
     closeFormModalHandler();
-    */
   };
   console.log("[Is Create Claim Collection]", props.createClaimState);
   if (
@@ -234,7 +265,12 @@ function MedicaidFunction(props) {
   ) {
     setIsCreateClaimCollection(false);
     TOAST.ok("Claim successfully created.");
-    props.listClaims({ companyId: userProfile.companyId });
+    props.listClaims({
+      companyId: userProfile.companyId,
+      provider: "Medicaid",
+      from: dateFrom,
+      to: dateTo,
+    });
   }
   if (
     isUpdateClaimCollection &&
@@ -243,7 +279,12 @@ function MedicaidFunction(props) {
   ) {
     TOAST.ok("Claim successfully updated.");
     setIsUpdateClaimCollection(false);
-    props.listClaims({ companyId: userProfile.companyId });
+    props.listClaims({
+      companyId: userProfile.companyId,
+      provider: "Medicaid",
+      from: dateFrom,
+      to: dateTo,
+    });
   }
   console.log(
     "[isDeleteClaim]",
@@ -258,7 +299,12 @@ function MedicaidFunction(props) {
     TOAST.ok("Claim successfully deleted.");
     setIsDeleteClaimCollection(false);
 
-    props.listClaims({ companyId: userProfile.companyId });
+    props.listClaims({
+      companyId: userProfile.companyId,
+      provider: "Medicaid",
+      from: dateFrom,
+      to: dateTo,
+    });
   }
 
   const filterRecordHandler = (keyword) => {
@@ -299,6 +345,17 @@ function MedicaidFunction(props) {
     setIsAddGroupButtons(dtSource.find((f) => f.isChecked));
     originalSource = [...dtSource];
     setDataSource(dtSource);
+  };
+  const filterByDateHandler = (dates) => {
+    setDateTo(dates.to);
+    setDateFrom(dates.from);
+
+    props.listClaims({
+      companyId: userProfile.companyId,
+      provider: "Medicaid",
+      from: dates.from,
+      to: dates.to,
+    });
   };
   const exportToExcelHandler = () => {
     const excelData = dataSource.filter((r) => r.isChecked);
@@ -346,16 +403,51 @@ function MedicaidFunction(props) {
                 justifyContent="space-between"
                 style={{ paddingBottom: 4 }}
               >
-                <div
-                  style={{ display: "inline-flex", gap: 10, paddingTop: 10 }}
+                <div>
+                  <FilterTable
+                    filterRecordHandler={filterRecordHandler}
+                    isNoDate={false}
+                    filterByDateHandler={filterByDateHandler}
+                    main={true}
+                  />
+                </div>
+              </Grid>
+              <div
+                style={{
+                  display: "inline-flex",
+                  gap: 10,
+                  paddingTop: 10,
+                  paddingBottom: 10,
+                }}
+              >
+                <Button
+                  onClick={() => createFormHandler()}
+                  variant="contained"
+                  style={{
+                    border: "solid 1px #2196f3",
+                    color: "white",
+                    background: "#2196f3",
+                    fontFamily: "Roboto",
+                    fontSize: "12px",
+                    fontWeight: 500,
+
+                    fontStretch: "normal",
+                    fontStyle: "normal",
+                    lineHeight: 1.71,
+                    letterSpacing: "0.4px",
+                    textAlign: "left",
+                    cursor: "pointer",
+                  }}
+                  component="span"
+                  startIcon={<AddIcon />}
                 >
+                  ADD Claim
+                </Button>
+                {isAddGroupButtons && (
                   <Button
-                    onClick={() => createFormHandler()}
-                    variant="contained"
+                    onClick={() => exportToExcelHandler()}
+                    variant="outlined"
                     style={{
-                      border: "solid 1px #2196f3",
-                      color: "white",
-                      background: "#2196f3",
                       fontFamily: "Roboto",
                       fontSize: "12px",
                       fontWeight: 500,
@@ -368,43 +460,15 @@ function MedicaidFunction(props) {
                       cursor: "pointer",
                     }}
                     component="span"
-                    startIcon={<AddIcon />}
+                    startIcon={<ImportExport />}
                   >
-                    ADD Claim
+                    {" "}
+                    Export Excel{" "}
                   </Button>
-                  {isAddGroupButtons && (
-                    <Button
-                      onClick={() => exportToExcelHandler()}
-                      variant="outlined"
-                      style={{
-                        fontFamily: "Roboto",
-                        fontSize: "12px",
-                        fontWeight: 500,
+                )}
+              </div>
 
-                        fontStretch: "normal",
-                        fontStyle: "normal",
-                        lineHeight: 1.71,
-                        letterSpacing: "0.4px",
-                        textAlign: "left",
-                        cursor: "pointer",
-                      }}
-                      component="span"
-                      startIcon={<ImportExport />}
-                    >
-                      {" "}
-                      Export Excel{" "}
-                    </Button>
-                  )}
-                </div>
-                <div>
-                  <FilterTable
-                    filterRecordHandler={filterRecordHandler}
-                    isNoDate={true}
-                    main={false}
-                  />
-                </div>
-              </Grid>
-              <HospiceTable
+              <ResultTable
                 columns={columns}
                 main={true}
                 grandTotal={grandTotal}

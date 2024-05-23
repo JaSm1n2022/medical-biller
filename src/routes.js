@@ -18,9 +18,11 @@
 // @material-ui/icons
 import Dashboard from "@material-ui/icons/Dashboard";
 import MedicaidIcon from "@material-ui/icons/LocalHospital";
+import GearIcon from "@material-ui/icons/SettingsOutlined";
 import Gear from "@material-ui/icons/Settings";
 import DashboardPage from "views/Dashboard/Dashboard.js";
 import Medicaid from "views/Claim/Medicaid/MedicaidFunction";
+import Utilities from "views/Utilities";
 
 import Settings from "views/Settings";
 
@@ -47,6 +49,14 @@ const dashboardRoutes = [
     rtlName: "قائمة الجدول",
     icon: MedicaidIcon,
     component: Medicaid,
+    layout: "/admin",
+  },
+  {
+    path: "/utilities",
+    name: "Utilities",
+    rtlName: "قائمة الجدول",
+    icon: GearIcon,
+    component: Utilities,
     layout: "/admin",
   },
 ];

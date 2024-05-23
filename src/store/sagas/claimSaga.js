@@ -20,7 +20,11 @@ function* listClaim(filter) {
     let { data, error, status } = yield supabaseClient
       .from("claims")
       .select()
-      .eq("companyId", filter.payload.companyId);
+      .eq("companyId", filter.payload.companyId)
+      .eq("provider", filter.payload.provider)
+      .gte("billed_on", `${filter.payload.from} 00:00`)
+      .lt("billed_on", `${filter.payload.to} 23:59`)
+      .order("billed_on", { ascending: false });
 
     if (error && status !== 406) {
       console.log(error.toString());
@@ -40,7 +44,7 @@ function* listClaim(filter) {
 function* createClaim(rqst) {
   try {
     console.log("[createClaims]", rqst.payload);
-    let { error } = yield supabaseClient.from("claims").insert([rqst.payload], {
+    let { error } = yield supabaseClient.from("claims").insert(rqst.payload, {
       returning: "minimal", // Don't return the value after inserting
     });
 

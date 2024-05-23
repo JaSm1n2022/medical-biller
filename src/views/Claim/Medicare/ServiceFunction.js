@@ -15,7 +15,6 @@ import { ACTION_STATUSES } from "utils/constants";
 import { Button, Grid } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 
-import HospiceTable from "components/Table/HospiceTable";
 import { ImportExport } from "@material-ui/icons";
 import Helper from "utils/helper";
 import * as FileSaver from "file-saver";
@@ -36,6 +35,7 @@ import { attemptToDeleteService } from "store/actions/serviceAction";
 import { resetDeleteServiceState } from "store/actions/serviceAction";
 import FilterTable from "components/Table/FilterTable";
 import { profileListStateSelector } from "store/selectors/profileSelector";
+import ResultTable from "components/Table/ResultTable";
 const styles = {
   cardCategoryWhite: {
     "&,& a,& a:hover,& a:focus": {
@@ -406,7 +406,7 @@ function ServiceFunction(props) {
                   />
                 </div>
               </Grid>
-              <HospiceTable
+              <ResultTable
                 columns={columns}
                 main={true}
                 grandTotal={grandTotal}

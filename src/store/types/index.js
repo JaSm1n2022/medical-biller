@@ -77,3 +77,27 @@ export type ClaimState = {
     status: ?string,
   },
 };
+export type EftState = {
+  eftList: {
+    data: ?Object,
+    error: ?string,
+    status: ?string,
+  },
+
+  eftUpdate: {
+    data: ?Object,
+    error: ?string,
+    status: ?string,
+  },
+
+  eftDelete: {
+    data: ?Object,
+    error: ?string,
+    status: ?string,
+  },
+  eftCreate: {
+    data: ?Object,
+    error: ?string,
+    status: ?string,
+  },
+};

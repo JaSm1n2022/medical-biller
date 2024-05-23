@@ -4,7 +4,7 @@ import "@inovua/reactdatagrid-community/index.css";
 
 let isWithCheckItem = false;
 
-const HospiceTable = (props) => {
+const ResultTable = (props) => {
   const { main } = props;
   const [columns, setColumns] = useState([]);
   const [dataSource, setDataSource] = useState([]);
@@ -97,4 +97,4 @@ const HospiceTable = (props) => {
   );
 };
 
-export default HospiceTable;
+export default ResultTable;

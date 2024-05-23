@@ -7,8 +7,26 @@ class MedicaidHandler {
       {
         defaultFlex: 1,
         minWidth: 100,
-        name: "created",
-        header: "Created",
+        name: "billed_on",
+        header: "Billed On",
+      },
+      {
+        defaultFlex: 1,
+        minWidth: 100,
+        name: "paid_on",
+        header: "Paid On",
+      },
+      {
+        defaultFlex: 1,
+        minWidth: 120,
+        name: "paid_issued",
+        header: "Paid Issued",
+      },
+      {
+        defaultFlex: 1,
+        minWidth: 100,
+        name: "eft",
+        header: "EFT",
       },
       {
         defaultFlex: 1,
@@ -18,14 +36,33 @@ class MedicaidHandler {
       },
       {
         defaultFlex: 1,
+        minWidth: 200,
+        name: "client_code",
+        header: "Client",
+      },
+      {
+        defaultFlex: 1,
+        visible: false,
         minWidth: 100,
-        name: "code",
+        name: "client_name",
+        header: "Client Name",
+      },
+      {
+        defaultFlex: 1,
+        minWidth: 100,
+        name: "date_of_service",
+        header: "DOS",
+      },
+      {
+        defaultFlex: 1,
+        minWidth: 100,
+        name: "service_code",
         header: "Code",
       },
       {
         defaultFlex: 1,
         minWidth: 300,
-        name: "description",
+        name: "service_desc",
         header: "Description",
       },
       {
@@ -34,11 +71,24 @@ class MedicaidHandler {
         name: "unit",
         header: "Unit",
       },
+
       {
         defaultFlex: 1,
         minWidth: 120,
-        name: "rate",
-        header: "Rate",
+        name: "billed_amount",
+        header: "Billed Amount",
+      },
+      {
+        defaultFlex: 1,
+        minWidth: 120,
+        name: "paid_amount",
+        header: "Paid Amount",
+      },
+      {
+        defaultFlex: 1,
+        minWidth: 240,
+        name: "comments",
+        header: "Comments",
       },
     ];
   }
