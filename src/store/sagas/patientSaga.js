@@ -40,11 +40,9 @@ function* listPatient(filter) {
 function* createPatient(rqst) {
   try {
     console.log("[createPatients]", rqst.payload);
-    let { error } = yield supabaseClient
-      .from("patients")
-      .insert([rqst.payload], {
-        returning: "minimal", // Don't return the value after inserting
-      });
+    let { error } = yield supabaseClient.from("patients").insert(rqst.payload, {
+      returning: "minimal", // Don't return the value after inserting
+    });
 
     if (error) {
       console.log(`[create Patient] : ${error.toString()}`);

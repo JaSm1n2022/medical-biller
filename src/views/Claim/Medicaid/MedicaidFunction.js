@@ -36,6 +36,17 @@ import { resetDeleteClaimState } from "store/actions/claimAction";
 import FilterTable from "components/Table/FilterTable";
 import { profileListStateSelector } from "store/selectors/profileSelector";
 import ResultTable from "components/Table/ResultTable";
+import { eftListStateSelector } from "store/selectors/eftSelector";
+import { attemptToFetchEft } from "store/actions/eftAction";
+import { resetFetchEftState } from "store/actions/eftAction";
+import moment from "moment";
+import Upload from "./Uploader/Upload";
+import { patientListStateSelector } from "store/selectors/patientSelector";
+import { attemptToFetchPatient } from "store/actions/patientAction";
+import { resetFetchPatientState } from "store/actions/patientAction";
+import { serviceListStateSelector } from "store/selectors/serviceSelector";
+import { attemptToFetchService } from "store/actions/serviceAction";
+import { resetFetchServiceState } from "store/actions/serviceAction";
 const styles = {
   cardCategoryWhite: {
     "&,& a,& a:hover,& a:focus": {
@@ -72,13 +83,15 @@ let grandTotal = 0.0;
 let originalSource = undefined;
 let locationList = [];
 let userProfile = {};
-
+let patientList = [];
+let serviceList = [];
 function MedicaidFunction(props) {
   const classes = useStyles();
 
   const [dataSource, setDataSource] = useState([]);
   const [columns, setColumns] = useState(MedicaidHandler.columns(true));
   const [isClaimsCollection, setIsClaimsCollection] = useState(true);
+  const [isEftCollection, setIsEftCollection] = useState(true);
   const [isCreateClaimCollection, setIsCreateClaimCollection] = useState(true);
   const [isUpdateClaimCollection, setIsUpdateClaimCollection] = useState(true);
   const [isDeleteClaimCollection, setIsDeleteClaimCollection] = useState(true);
@@ -135,11 +148,47 @@ function MedicaidFunction(props) {
       props.resetDeleteClaim();
       setIsDeleteClaimCollection(true);
     }
+    if (!isEftCollection && props.efts?.status === ACTION_STATUSES.SUCCEED) {
+      props.resetListEfts();
+      setIsEftCollection(true);
+      const data = [...dataSource];
+      const sourceData = props.efts?.data || [];
+      console.log("[COMPARE]", data, sourceData);
+      const updateEfts = [];
+      data.forEach((c) => {
+        if (c.isChecked) {
+          const find = sourceData.find(
+            (s) =>
+              s.provider === c.provider &&
+              s.dos === c.date_of_service &&
+              s.client === c.client_name
+          );
+          if (find) console.log("[FIND EFT]", find);
+          const params = {
+            id: c.id,
+            eft: find.eft_number,
+            paid_on: find.paid_on,
+            paid_issued: find.paid_issued,
+            paid_amt: find.paid_amt || 0,
+            status: find.status,
+            updatedUser: {
+              name: userProfile.name,
+              userId: userProfile.id,
+              date: new Date(),
+            },
+          };
+          updateEfts.push(params);
+        }
+      });
+      console.log("[For Update]", updateEfts);
+      props.updateClaim(updateEfts);
+    }
   }, [
     isDeleteClaimCollection,
     isUpdateClaimCollection,
     isCreateClaimCollection,
     isClaimsCollection,
+    isEftCollection,
   ]);
   useEffect(() => {
     console.log("list Claims", props.profileState);
@@ -152,6 +201,8 @@ function MedicaidFunction(props) {
       const dates = Helper.formatDateRangeByCriteriaV2("thisMonth");
       setDateFrom(dates.from);
       setDateTo(dates.to);
+      props.listServices({ companyId: userProfile.companyId });
+      props.listPatients({ companyId: userProfile.companyId });
       props.listClaims({
         companyId: userProfile.companyId,
         provider: "Medicaid",
@@ -218,13 +269,14 @@ function MedicaidFunction(props) {
         service_code: payload?.service?.code,
         service_desc: payload?.service?.description,
         service_id: payload?.service?.id,
-        billed_amount: payload?.billedAmt,
-        paid_amount: payload?.paidAmt || 0,
+        billed_amt: payload?.billedAmt,
+        paid_amt: payload?.paidAmt || 0,
         billed_on: general.billedDt,
         eft: general.eftNumber,
         paid_on: general.paidOnDt,
         paid_issued: general.paidIssuedDt,
         unit: payload?.unit,
+        status: "Pending",
         companyId: userProfile.companyId,
         updatedUser: {
           name: userProfile.name,
@@ -386,7 +438,119 @@ function MedicaidFunction(props) {
         });
     }
   };
+  const updateEftInformationHandler = () => {
+    props.listEfts({
+      companyId: userProfile.companyId,
+      provider: "Medicaid",
+      from: dateFrom,
+      to: moment(new Date(dateFrom)).add(90, "days").utc().format("YYYY-MM-DD"),
+    });
+  };
+  if (isEftCollection && props.efts?.status === ACTION_STATUSES.SUCCEED) {
+    console.log("[EFTS]", props.efts.data);
+    setIsEftCollection(false);
+  }
+  const serviceInfoHandler = (dos, startTm, endTm, service) => {
+    console.log("[DOS]", start, end, service);
+    let result = {};
+    const newDos = moment(new Date(dos)).format("YYYY-MM-DD");
+    console.log("[Item Category 1]", newDos);
+    const from = moment(new Date(`${newDos} ${startTm}`));
+    const end = moment(new Date(`${newDos} ${endTm}`));
 
+    const diff = moment.duration(end.diff(from));
+    const diffMin = parseFloat(diff.asMinutes(), 10);
+    if (service.rate_per_min && service.rate_per_min > 0) {
+      console.log(
+        "[DIFF MIN]",
+        diffMin,
+        diffMin / parseInt(service.rate_per_min),
+        parseInt(diffMin / parseInt(service.rate_per_min, 10)) * service.rate
+      );
+      result.unit = parseInt(diffMin / parseInt(service.rate_per_min, 10));
+      result.billedAmt =
+        parseInt(diffMin / parseInt(service.rate_per_min, 10)) * servie.rate;
+    } else {
+      result.billedAmt = service.rate;
+      result.unit = service.unit;
+    }
+    return result;
+  };
+  const uploadHandler = (data) => {
+    console.log("[DATA UPLOAD]", data);
+    const report = Helper.convertJsonIntoClaims(data);
+    console.log("[Report]", report);
+    const rqst = [];
+    try {
+      report.forEach((item) => {
+        console.log("[REPORT 1]", report);
+        const findClient = patientList.find(
+          (p) => item.name?.toLowerCase() === p.name?.toLowerCase()
+        );
+        const findService = serviceList.find(
+          (s) => item.service?.toLowerCase() === s.code?.toLowerCase()
+        );
+        const billInfo = serviceInfoHandler(
+          item.dos,
+          item.start,
+          item.end,
+          findService
+        );
+        const params = {
+          provider: "Medicaid",
+          client_name: item.name,
+          client_id: findClient?.id,
+          client_code: findClient?.patientCd,
+          date_of_service: item.dos,
+          dos_start: item.start,
+          dos_end: item.end,
+          service_code: findService?.code,
+          service_desc: findService?.description,
+          service_id: findService?.id,
+          billed_amt: billInfo?.billedAmt,
+          billed_on: new Date(),
+
+          unit: billInfo?.unit,
+          status: "Pending",
+          companyId: userProfile.companyId,
+          updatedUser: {
+            name: userProfile.name,
+            userId: userProfile.id,
+            date: new Date(),
+          },
+        };
+
+        if (mode === "create") {
+          params.createdUser = {
+            name: userProfile.name,
+            userId: userProfile.companyId,
+            date: new Date(),
+          };
+          //  props.createClaim(params);
+        } else if (mode === "edit") {
+          params.id = payload.id;
+          // props.updateClaim(params);
+        }
+        rqst.push(params);
+      });
+    } catch (ex) {
+      console.log("[Ex]", ex.toString());
+    }
+    console.log("[rqst]", rqst, dataSource);
+    if (rqst?.length) {
+      //props.createPatient(rqst);
+    } else {
+      TOAST.ok("DONE");
+    }
+  };
+  if (props.patients?.status === ACTION_STATUSES.SUCCEED) {
+    patientList = props.patients.data;
+    props.resetListPatients();
+  }
+  if (props.services?.status === ACTION_STATUSES.SUCCEED) {
+    serviceList = props.services.data;
+    props.resetListServices();
+  }
   return (
     <>
       <GridContainer>
@@ -443,28 +607,57 @@ function MedicaidFunction(props) {
                 >
                   ADD Claim
                 </Button>
+                <Upload uploadHandler={uploadHandler} />
                 {isAddGroupButtons && (
-                  <Button
-                    onClick={() => exportToExcelHandler()}
-                    variant="outlined"
+                  <div
                     style={{
-                      fontFamily: "Roboto",
-                      fontSize: "12px",
-                      fontWeight: 500,
-
-                      fontStretch: "normal",
-                      fontStyle: "normal",
-                      lineHeight: 1.71,
-                      letterSpacing: "0.4px",
-                      textAlign: "left",
-                      cursor: "pointer",
+                      display: "inline-flex",
+                      gap: 10,
                     }}
-                    component="span"
-                    startIcon={<ImportExport />}
                   >
-                    {" "}
-                    Export Excel{" "}
-                  </Button>
+                    <Button
+                      onClick={() => exportToExcelHandler()}
+                      variant="outlined"
+                      style={{
+                        fontFamily: "Roboto",
+                        fontSize: "12px",
+                        fontWeight: 500,
+
+                        fontStretch: "normal",
+                        fontStyle: "normal",
+                        lineHeight: 1.71,
+                        letterSpacing: "0.4px",
+                        textAlign: "left",
+                        cursor: "pointer",
+                      }}
+                      component="span"
+                      startIcon={<ImportExport />}
+                    >
+                      {" "}
+                      Export Excel{" "}
+                    </Button>
+                    <Button
+                      onClick={() => updateEftInformationHandler()}
+                      variant="outlined"
+                      style={{
+                        fontFamily: "Roboto",
+                        fontSize: "12px",
+                        fontWeight: 500,
+
+                        fontStretch: "normal",
+                        fontStyle: "normal",
+                        lineHeight: 1.71,
+                        letterSpacing: "0.4px",
+                        textAlign: "left",
+                        cursor: "pointer",
+                      }}
+                      component="span"
+                      startIcon={<ImportExport />}
+                    >
+                      {" "}
+                      Update EFT{" "}
+                    </Button>
+                  </div>
                 )}
               </div>
 
@@ -497,15 +690,13 @@ function MedicaidFunction(props) {
   );
 }
 
-const mapStateToProps = (store) => ({
-  claims: claimListStateSelector(store),
-  createClaimState: claimCreateStateSelector(store),
-  updateClaimState: claimUpdateStateSelector(store),
-  deleteClaimState: claimDeleteStateSelector(store),
-  profileState: profileListStateSelector(store),
-});
-
 const mapDispatchToProps = (dispatch) => ({
+  listPatients: (data) => dispatch(attemptToFetchPatient(data)),
+  resetListPatients: () => dispatch(resetFetchPatientState()),
+  listServices: (data) => dispatch(attemptToFetchService(data)),
+  resetListServices: () => dispatch(resetFetchServiceState()),
+  listEfts: (data) => dispatch(attemptToFetchEft(data)),
+  resetListEfts: () => dispatch(resetFetchEftState()),
   listClaims: (data) => dispatch(attemptToFetchClaim(data)),
   resetListClaims: () => dispatch(resetFetchClaimState()),
   createClaim: (data) => dispatch(attemptToCreateClaim(data)),

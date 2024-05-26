@@ -35,6 +35,10 @@ import { attemptToDeletePatient } from "store/actions/patientAction";
 import { resetDeletePatientState } from "store/actions/patientAction";
 import FilterTable from "components/Table/FilterTable";
 import { profileListStateSelector } from "store/selectors/profileSelector";
+import ResultTable from "components/Table/ResultTable";
+import ClientUploader from "./Uploader";
+import Upload from "./Uploader/Upload";
+import moment from "moment";
 const styles = {
   cardCategoryWhite: {
     "&,& a,& a:hover,& a:focus": {
@@ -88,6 +92,7 @@ function PatientFunction(props) {
     true
   );
   const [isFormModal, setIsFormModal] = useState(false);
+  const [isUploadModal, setIsUploadModal] = useState(false);
   const [item, setItem] = useState(undefined);
   const [mode, setMode] = useState("create");
   const [isAddGroupButtons, setIsAddGroupButtons] = useState(false);
@@ -330,6 +335,66 @@ function PatientFunction(props) {
     }
   };
 
+  const createPatientIdHandler = (fn, ln) => {
+    let generatedPatientId = "";
+    if (fn && ln) {
+      if (ln.length < 5) {
+        generatedPatientId += ln.toUpperCase();
+      } else {
+        generatedPatientId += ln.substring(0, ln.length - 2);
+      }
+      if (fn.length < 3) {
+        generatedPatientId += `-${fn}`;
+      } else {
+        generatedPatientId += `-${fn.substring(0, fn.length - 2)}`;
+      }
+      generatedPatientId += `.${moment(new Date()).format("YYYYMMDDHHmm")}`;
+    }
+    generatedPatientId = generatedPatientId.toUpperCase();
+    return generatedPatientId;
+  };
+  const uploadHandler = (data) => {
+    console.log("[DATA UPLOAD]", data);
+    const report = Helper.convertJsonIntoClient(data);
+    console.log("[Report]", report);
+    const rqst = [];
+    try {
+      report.forEach((item) => {
+        console.log("[REPORT 1]", report);
+        const params = {};
+        params.name = `${item.fn} ${item.ln}`;
+        params.fn = item.fn;
+        params.ln = item.ln;
+        params.patientCd = createPatientIdHandler(item.fn, item.ln);
+        params.companyId = userProfile.companyId;
+        params.updatedUser = {
+          name: userProfile.name,
+          userId: userProfile.id,
+          date: new Date(),
+        };
+        params.createdUser = {
+          name: userProfile.name,
+          userId: userProfile.companyId,
+          date: new Date(),
+        };
+        console.log("[PARAMS]", params);
+        if (
+          !dataSource.find(
+            (d) => d.name?.toLowerCase() === params?.name.toLowerCase()
+          )
+        ) {
+          rqst.push(params);
+        }
+      });
+    } catch (ex) {
+      console.log("[Ex]", ex.toString());
+    }
+    console.log("[rqst]", rqst, dataSource);
+    if (rqst?.length) {
+      props.createPatient(rqst);
+    }
+  };
+
   return (
     <>
       <GridContainer>
@@ -359,7 +424,7 @@ function PatientFunction(props) {
                       fontFamily: "Roboto",
                       fontSize: "12px",
                       fontWeight: 500,
-
+                      height: "42px",
                       fontStretch: "normal",
                       fontStyle: "normal",
                       lineHeight: 1.71,
@@ -372,6 +437,32 @@ function PatientFunction(props) {
                   >
                     ADD Patient
                   </Button>
+                  <Upload uploadHandler={uploadHandler} />
+                  {/*
+                  <Button
+                    onClick={() => uploadFormHandler()}
+                    variant="contained"
+                    style={{
+                      border: "solid 1px #2196f3",
+                      color: "white",
+                      background: "#2196f3",
+                      fontFamily: "Roboto",
+                      fontSize: "12px",
+                      fontWeight: 500,
+
+                      fontStretch: "normal",
+                      fontStyle: "normal",
+                      lineHeight: 1.71,
+                      letterSpacing: "0.4px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                    component="span"
+                    startIcon={<AddIcon />}
+                  >
+                    Upload Client
+                  </Button>
+                  */}
                   {isAddGroupButtons && (
                     <Button
                       onClick={() => exportToExcelHandler()}
@@ -431,6 +522,7 @@ function PatientFunction(props) {
           closeFormModalHandler={closeFormModalHandler}
         />
       )}
+      {isUploadModal && <Upload uploadHandler={uploadHandler} />}
     </>
   );
 }

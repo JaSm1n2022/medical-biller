@@ -3,6 +3,7 @@ import GridContainer from "components/Grid/GridContainer";
 import GridItem from "components/Grid/GridItem";
 import PlotIcon from "@material-ui/icons/ViewList";
 import EftUploader from "./EftUploader";
+import MedicaidFunction from "./EFT/Medicaid/MedicaidFunction";
 
 function Utilities() {
   return (
@@ -14,9 +15,9 @@ function Utilities() {
             headerColor="primary"
             tabs={[
               {
-                tabName: "EFT Uploader",
+                tabName: "EFT Medicaid",
                 tabIcon: PlotIcon,
-                tabContent: <EftUploader />,
+                tabContent: <MedicaidFunction />,
               },
             ]}
           />

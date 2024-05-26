@@ -4,6 +4,7 @@ const { customAlphabet } = require("nanoid");
 // Define the characters to be used for the ID generation
 const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+import { FindReplace } from "@material-ui/icons";
 // Create a custom ID generator with the specified alphabet and length
 
 import moment from "moment";
@@ -253,7 +254,6 @@ class Helper {
     jsonData.forEach((json, index) => {
       const record = {};
       if (json || JSON.stringify(json) !== "{}") {
-        console.log("[WHO AM I]", json);
         record.uuid = index;
         record.indexNumber = index + 1;
 
@@ -290,7 +290,49 @@ class Helper {
     console.log("[EFTS]", efts);
     return efts;
   }
-  d;
+  static convertJsonIntoClient(jsonData) {
+    console.log("[Json Upload]", jsonData);
+    const clients = [];
+    // const record = {...jsonData};
+    jsonData.forEach((json, index) => {
+      const record = {};
+      if (json || JSON.stringify(json) !== "{}") {
+        record.uuid = index;
+        record.indexNumber = index + 1;
+
+        record.fn = json["FIRST NAME"]?.trim() || "";
+        record.ln = json["LAST NAME"]?.trim() || "";
+
+        clients.push(record);
+      }
+    });
+
+    return clients;
+  }
+  static convertJsonIntoClaims(jsonData) {
+    console.log("[Json Upload]", jsonData);
+    const claims = [];
+    // const record = {...jsonData};
+    jsonData.forEach((json, index) => {
+      const record = {};
+      if (json || JSON.stringify(json) !== "{}") {
+        record.uuid = index;
+        record.indexNumber = index + 1;
+
+        record.name = json["NAME"]?.trim() || "";
+        record.dos = json["DOS"];
+        record.start = json["START"];
+        record.end = json["END"];
+        record.duration = json["DURATION"]?.replace("Hr", "").replace(" ", "");
+        record.code = json["CODE"];
+        record.service = json["SERVICE"];
+        record.location = json["LOCATION"];
+        claims.push(record);
+      }
+    });
+
+    return claims;
+  }
 }
 
 export default Helper;

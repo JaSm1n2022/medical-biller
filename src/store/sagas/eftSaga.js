@@ -22,9 +22,9 @@ function* listEft(filter) {
       .select()
       .eq("companyId", filter.payload.companyId)
       .eq("provider", filter.payload.provider)
-      .gte("billed_on", `${filter.payload.from} 00:00`)
-      .lt("billed_on", `${filter.payload.to} 23:59`)
-      .order("billed_on", { ascending: false });
+      .gte("paid_on", `${filter.payload.from} 00:00`)
+      .lt("paid_on", `${filter.payload.to} 23:59`)
+      .order("paid_on", { ascending: false });
 
     if (error && status !== 406) {
       console.log(error.toString());

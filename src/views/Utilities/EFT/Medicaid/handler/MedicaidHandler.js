@@ -4,12 +4,7 @@ class MedicaidHandler {
   static columns(main) {
     return [
       { width: 92, name: "actions", header: "Actions", visible: main },
-      {
-        defaultFlex: 1,
-        minWidth: 100,
-        name: "billed_on",
-        header: "Billed On",
-      },
+
       {
         defaultFlex: 1,
         minWidth: 100,
@@ -24,8 +19,8 @@ class MedicaidHandler {
       },
       {
         defaultFlex: 1,
-        minWidth: 100,
-        name: "eft",
+        minWidth: 200,
+        name: "eft_number",
         header: "EFT",
       },
       {
@@ -37,27 +32,22 @@ class MedicaidHandler {
       {
         defaultFlex: 1,
         minWidth: 200,
-        name: "client_code",
+        name: "client",
         header: "Client",
       },
       {
         defaultFlex: 1,
         visible: false,
         minWidth: 100,
-        name: "client_name",
-        header: "Client Name",
+        name: "service_cd",
+        header: "Service",
       },
       {
         defaultFlex: 1,
+        visible: false,
         minWidth: 100,
-        name: "date_of_service",
-        header: "DOS",
-      },
-      {
-        defaultFlex: 1,
-        minWidth: 100,
-        name: "service_code",
-        header: "Code",
+        name: "service_mod",
+        header: "Modifier",
       },
       {
         defaultFlex: 1,
@@ -68,40 +58,40 @@ class MedicaidHandler {
       {
         defaultFlex: 1,
         minWidth: 100,
-        name: "unit",
-        header: "Unit",
+        name: "dos",
+        header: "DOS",
+      },
+      {
+        defaultFlex: 1,
+        minWidth: 100,
+        name: "eos",
+        header: "EOS",
+      },
+
+      {
+        defaultFlex: 1,
+        minWidth: 100,
+        name: "billed_amt",
+        header: "Billed Amt",
       },
 
       {
         defaultFlex: 1,
         minWidth: 120,
-        name: "billed_amt",
-        header: "Billed Amount",
+        name: "paid_amt",
+        header: "Paid Amt",
       },
       {
         defaultFlex: 1,
         minWidth: 120,
-        name: "paid_amt",
-        header: "Paid Amount",
-      },
-      {
-        defaultFlex: 1,
-        minWidth: 240,
         name: "status",
-        header: "Claim Status",
-      },
-      {
-        defaultFlex: 1,
-        minWidth: 240,
-        name: "comments",
-        header: "Comments",
+        header: "Status",
       },
     ];
   }
   static mapData(items) {
     items.forEach((i) => {
       i.created = moment(new Date(i.created_at)).format("YYYY-MM-DD");
-      i.billed_on = moment(new Date(i.created_at)).format("YYYY-MM-DD");
     });
     return items;
   }

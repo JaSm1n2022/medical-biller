@@ -50,12 +50,13 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const EftUploader = (props) => {
+const ClientUploader = (props) => {
   const classes = useStyles();
+
   const [paidOn, setPaidOn] = useState(new Date());
   const [paymentDt, setPaymentDt] = useState(new Date());
   const [eft, setEft] = useState("");
-
+  console.log("Upload Please");
   const dateInputHandler = (value, name) => {
     switch (name) {
       case "paidOn":
@@ -79,12 +80,13 @@ const EftUploader = (props) => {
   };
   const uploadHandler = (data) => {
     console.log("[DATA UPLOAD]", data);
-    const report = Helper.convertJsonIntoEft(data);
+    const report = Helper.convertJsonIntoClient(data);
     console.log("[Report]", report);
     const finalPayload = [];
     const userProfile = props.profileState?.data[0];
     for (const payload of report) {
       console.log("[Payload Report]", payload, userProfile);
+
       const params = {
         provider: "Medicaid",
         client: payload?.patient,
@@ -217,4 +219,4 @@ const mapDispatchToProps = (dispatch) => ({
   resetEft: () => dispatch(resetCreateEftState()),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(EftUploader);
+export default connect(mapStateToProps, mapDispatchToProps)(ClientUploader);
