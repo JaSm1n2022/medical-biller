@@ -36,13 +36,19 @@ class MedicaidHandler {
       },
       {
         defaultFlex: 1,
+        minWidth: 100,
+        name: "employee",
+        header: "Employee",
+      },
+      {
+        defaultFlex: 1,
         minWidth: 200,
         name: "client_code",
         header: "Client",
       },
       {
         defaultFlex: 1,
-        visible: false,
+
         minWidth: 100,
         name: "client_name",
         header: "Client Name",
@@ -101,7 +107,7 @@ class MedicaidHandler {
   static mapData(items) {
     items.forEach((i) => {
       i.created = moment(new Date(i.created_at)).format("YYYY-MM-DD");
-      i.billed_on = moment(new Date(i.created_at)).format("YYYY-MM-DD");
+      i.billed_on = moment(new Date(i.billed_on)).format("YYYY-MM-DD");
     });
     return items;
   }

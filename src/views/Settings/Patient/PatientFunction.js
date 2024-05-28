@@ -275,8 +275,8 @@ function PatientFunction(props) {
       let found = temp.filter(
         (data) =>
           data.name.toLowerCase().indexOf(keyword.toLowerCase()) !== -1 ||
-          (data.address &&
-            data.address.toLowerCase().indexOf(keyword.toLowerCase()) !== -1)
+          (data.patientCd &&
+            data.patientCd.toLowerCase().indexOf(keyword.toLowerCase()) !== -1)
       );
 
       setDataSource(found);
@@ -362,7 +362,7 @@ function PatientFunction(props) {
       report.forEach((item) => {
         console.log("[REPORT 1]", report);
         const params = {};
-        params.name = `${item.fn} ${item.ln}`;
+        params.name = `${item.fn?.toUpperCase()} ${item.ln?.toUpperCase()}`;
         params.fn = item.fn;
         params.ln = item.ln;
         params.patientCd = createPatientIdHandler(item.fn, item.ln);
@@ -392,6 +392,8 @@ function PatientFunction(props) {
     console.log("[rqst]", rqst, dataSource);
     if (rqst?.length) {
       props.createPatient(rqst);
+    } else {
+      TOAST.ok("DONE");
     }
   };
 

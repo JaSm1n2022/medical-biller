@@ -35,6 +35,7 @@ import { attemptToDeleteService } from "store/actions/serviceAction";
 import { resetDeleteServiceState } from "store/actions/serviceAction";
 import FilterTable from "components/Table/FilterTable";
 import { profileListStateSelector } from "store/selectors/profileSelector";
+import ResultTable from "components/Table/ResultTable";
 const styles = {
   cardCategoryWhite: {
     "&,& a,& a:hover,& a:focus": {

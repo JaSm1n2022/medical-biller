@@ -195,7 +195,10 @@ function MedicaidFunction(props) {
     });
     setColumns(cols);
     originalSource = [...source];
-
+    source.forEach((c) => {
+      grandTotal += parseFloat(c.paid_amt || 0.0);
+    });
+    console.log("[GRAND]", grandTotal);
     setDataSource(source);
     setIsEftsCollection(false);
   }
@@ -345,6 +348,9 @@ function MedicaidFunction(props) {
             <CardHeader color="success">
               <Grid container justifyContent="space-between">
                 <h4 className={classes.cardTitleWhite}>EFT Transaction</h4>
+                <h4 className={classes.cardTitleWhite}>{`${parseFloat(
+                  grandTotal
+                ).toFixed(2)}`}</h4>
               </Grid>
             </CardHeader>
             <CardBody>
@@ -441,7 +447,6 @@ function MedicaidFunction(props) {
     </>
   );
 }
-
 const mapStateToProps = (store) => ({
   efts: eftListStateSelector(store),
   createEftState: eftCreateStateSelector(store),

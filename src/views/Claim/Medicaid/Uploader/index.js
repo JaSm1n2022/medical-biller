@@ -50,88 +50,24 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const ClientUploader = (props) => {
+const ClaimUploader = (props) => {
   const classes = useStyles();
 
-  const [paidOn, setPaidOn] = useState(new Date());
-  const [paymentDt, setPaymentDt] = useState(new Date());
-  const [eft, setEft] = useState("");
-  console.log("Upload Please");
+  const [billedOn, setBilledOn] = useState(new Date());
+
   const dateInputHandler = (value, name) => {
     switch (name) {
-      case "paidOn":
-        setPaidOn(value);
+      case "billedOn":
+        setBilledOn(value);
         return;
-      case "paymentDt":
-        setPaymentDt(value);
-        return;
-      default:
-        return;
-    }
-  };
-  const inputHandler = ({ target }) => {
-    switch (target.name) {
-      case "eft":
-        setEft(target.value);
-        return;
+
       default:
         return;
     }
   };
   const uploadHandler = (data) => {
-    console.log("[DATA UPLOAD]", data);
-    const report = Helper.convertJsonIntoClient(data);
-    console.log("[Report]", report);
-    const finalPayload = [];
-    const userProfile = props.profileState?.data[0];
-    for (const payload of report) {
-      console.log("[Payload Report]", payload, userProfile);
-
-      const params = {
-        provider: "Medicaid",
-        client: payload?.patient,
-        service_cd: payload?.service,
-        service_desc: payload?.serviceDesc,
-        service_mod: payload?.modifier,
-        dos: moment(new Date(`${payload?.dos} 17:00`)).format(
-          "YYYY-MM-DD HH:mm"
-        ),
-        eos: moment(new Date(`${payload?.eos} 17:00`)).format(
-          "YYYY-MM-DD HH:mm"
-        ),
-        billed_amt: parseFloat(payload.billedAmt || 0.0, 2),
-        paid_amt: parseFloat(payload.paidAmt || 0.0, 2),
-        status: payload.status,
-        companyId: userProfile.companyId,
-        eft_number: eft,
-        paid_on: moment(new Date(paidOn)).format("YYYY-MM-DD 17:00"),
-        paid_issued: moment(new Date(paymentDt)).format("YYYY-MM-DD 17:00"),
-        updatedUser: {
-          name: userProfile.name,
-          userId: userProfile.id,
-          date: new Date(),
-        },
-      };
-
-      params.createdUser = {
-        name: userProfile.name,
-        userId: userProfile.companyId,
-        date: new Date(),
-      };
-
-      finalPayload.push(params);
-    }
-    console.log("[Final Payload]", finalPayload);
-    props.createEft(finalPayload);
-
-    //  setIsUploadOpen(true);
+    props.uploadHandler(data, billedOn);
   };
-  console.log("[PROPS EFTS]", props.createEftState);
-  if (props.createEftState?.status === ACTION_STATUSES.SUCCEED) {
-    TOAST.ok("Successfully Uploaded.");
-    props.resetEft();
-    props.refreshHandler();
-  }
   return (
     <ReactModal
       style={{
@@ -166,7 +102,10 @@ const ClientUploader = (props) => {
       ariaHideApp={false}
     >
       <div className={styles.form}>
-        <HeaderModal title={"ADD EFT"} onClose={props.closeFormModalHandler} />
+        <HeaderModal
+          title={"UPLOAD CLAIMS"}
+          onClose={props.closeFormModalHandler}
+        />
         <div className={styles.content}>
           <Grid
             container
@@ -176,26 +115,10 @@ const ClientUploader = (props) => {
           >
             <Grid item xs={12} md={4}>
               <CustomDatePicker
-                name={"paidOn"}
-                value={paidOn}
+                name={"billedOn"}
+                value={billedOn}
                 onChange={dateInputHandler}
-                label={"Paid On"}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <CustomTextField
-                name={"eft"}
-                value={eft}
-                placeholder={"EFT Number"}
-                onChange={inputHandler}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <CustomDatePicker
-                name={"paymentDt"}
-                value={paymentDt}
-                onChange={dateInputHandler}
-                label={"Payment Date"}
+                label={"Billed On"}
               />
             </Grid>
             <Grid item xs={12}>
@@ -209,14 +132,4 @@ const ClientUploader = (props) => {
   );
 };
 
-const mapStateToProps = (store) => ({
-  createEftState: eftCreateStateSelector(store),
-  profileState: profileListStateSelector(store),
-});
-
-const mapDispatchToProps = (dispatch) => ({
-  createEft: (data) => dispatch(attemptToCreateEft(data)),
-  resetEft: () => dispatch(resetCreateEftState()),
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(ClientUploader);
+export default ClaimUploader;

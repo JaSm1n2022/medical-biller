@@ -47,6 +47,7 @@ import { resetFetchPatientState } from "store/actions/patientAction";
 import { serviceListStateSelector } from "store/selectors/serviceSelector";
 import { attemptToFetchService } from "store/actions/serviceAction";
 import { resetFetchServiceState } from "store/actions/serviceAction";
+import Uploader from "./Uploader";
 const styles = {
   cardCategoryWhite: {
     "&,& a,& a:hover,& a:focus": {
@@ -101,7 +102,7 @@ function MedicaidFunction(props) {
   const [isAddGroupButtons, setIsAddGroupButtons] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-
+  const [isUploadFormModal, setIsUploadFormModal] = useState(false);
   const createFormHandler = (data, mode) => {
     setItem(data);
     setMode(mode || "create");
@@ -126,6 +127,7 @@ function MedicaidFunction(props) {
       props.createClaimState &&
       props.createClaimState.status === ACTION_STATUSES.SUCCEED
     ) {
+      TOAST.ok("Successfully created.");
       props.resetCreateClaim();
 
       setIsCreateClaimCollection(true);
@@ -153,7 +155,7 @@ function MedicaidFunction(props) {
       setIsEftCollection(true);
       const data = [...dataSource];
       const sourceData = props.efts?.data || [];
-      console.log("[COMPARE]", data, sourceData);
+
       const updateEfts = [];
       data.forEach((c) => {
         if (c.isChecked) {
@@ -161,27 +163,34 @@ function MedicaidFunction(props) {
             (s) =>
               s.provider === c.provider &&
               s.dos === c.date_of_service &&
-              s.client === c.client_name
+              c.service_code?.toString() === s.service_cd?.toString() &&
+              s.client?.toLowerCase() === c.client_name?.toLowerCase()
           );
-          if (find) console.log("[FIND EFT]", find);
-          const params = {
-            id: c.id,
-            eft: find.eft_number,
-            paid_on: find.paid_on,
-            paid_issued: find.paid_issued,
-            paid_amt: find.paid_amt || 0,
-            status: find.status,
-            updatedUser: {
-              name: userProfile.name,
-              userId: userProfile.id,
-              date: new Date(),
-            },
-          };
-          updateEfts.push(params);
+
+          if (find) {
+            const params = {
+              id: c.id,
+              eft: find.eft_number,
+              paid_on: find.paid_on,
+              paid_issued: find.paid_issued,
+              paid_amt: find.paid_amt || 0,
+              status: find.status,
+              updatedUser: {
+                name: userProfile.name,
+                userId: userProfile.id,
+                date: new Date(),
+              },
+            };
+            updateEfts.push(params);
+          }
         }
       });
       console.log("[For Update]", updateEfts);
-      props.updateClaim(updateEfts);
+      if (updateEfts?.length) {
+        props.updateClaim(updateEfts);
+      } else {
+        TOAST.ok("No record to be updated.");
+      }
     }
   }, [
     isDeleteClaimCollection,
@@ -245,7 +254,10 @@ function MedicaidFunction(props) {
     });
     setColumns(cols);
     originalSource = [...source];
-
+    grandTotal = 0.0;
+    source.forEach((s) => {
+      grandTotal += parseFloat(s.paid_amt || 0);
+    });
     setDataSource(source);
     setIsClaimsCollection(false);
   }
@@ -260,7 +272,7 @@ function MedicaidFunction(props) {
     for (const payload of details) {
       const params = {
         provider: "Medicaid",
-        client_name: payload?.patient?.name,
+        client_name: payload?.patient?.name?.toUpperCase(),
         client_id: payload?.patient?.id,
         client_code: payload?.patient?.patientCd,
         date_of_service: payload?.dos.split(" ")[0],
@@ -273,9 +285,11 @@ function MedicaidFunction(props) {
         paid_amt: payload?.paidAmt || 0,
         billed_on: general.billedDt,
         eft: general.eftNumber,
+        employee: general.employee,
         paid_on: general.paidOnDt,
         paid_issued: general.paidIssuedDt,
         unit: payload?.unit,
+        service_location: payload?.location,
         status: "Pending",
         companyId: userProfile.companyId,
         updatedUser: {
@@ -365,14 +379,26 @@ function MedicaidFunction(props) {
       setDataSource([...originalSource]);
     } else {
       const temp = [...originalSource];
-      console.log("[Tempt]", temp);
+      console.log("[Tempt]", temp, keyword);
       let found = temp.filter(
         (data) =>
-          data.code.toLowerCase().indexOf(keyword.toLowerCase()) !== -1 ||
-          data.description.toLowerCase().indexOf(keyword.toLowerCase()) !== -1
+          data.employee?.toLowerCase().indexOf(keyword.toLowerCase()) !== -1 ||
+          data.service_code?.toLowerCase().indexOf(keyword.toLowerCase()) !==
+            -1 ||
+          data.client_name?.toLowerCase().indexOf(keyword.toLowerCase()) !==
+            -1 ||
+          data.status?.toLowerCase().indexOf(keyword.toLowerCase()) !== -1
       );
-
-      setDataSource(found);
+      console.log("[FOUND]", found);
+      if (found?.length === 0) {
+        TOAST.error("No record found");
+      } else {
+        grandTotal = 0.0;
+        found.forEach((s) => {
+          grandTotal += parseFloat(s.paid_amt || 0);
+        });
+        setDataSource(found);
+      }
     }
   };
 
@@ -451,15 +477,18 @@ function MedicaidFunction(props) {
     setIsEftCollection(false);
   }
   const serviceInfoHandler = (dos, startTm, endTm, service) => {
-    console.log("[DOS]", start, end, service);
+    console.log("[DOS]", dos, startTm, endTm, service);
     let result = {};
-    const newDos = moment(new Date(dos)).format("YYYY-MM-DD");
-    console.log("[Item Category 1]", newDos);
-    const from = moment(new Date(`${newDos} ${startTm}`));
-    const end = moment(new Date(`${newDos} ${endTm}`));
-
+    const newDos = dos;
+    const startNumber = moment(startTm, ["h:mmA"]).format("HH:mm");
+    const endNumber = moment(endTm, ["h:mmA"]).format("HH:mm");
+    const from = moment(new Date(`${newDos} ${startNumber}`));
+    const end = moment(new Date(`${newDos} ${endNumber}`));
+    result.startTm = startNumber;
+    result.endTm = endNumber;
     const diff = moment.duration(end.diff(from));
     const diffMin = parseFloat(diff.asMinutes(), 10);
+    console.log("[FROM]", from, end, diff, diffMin);
     if (service.rate_per_min && service.rate_per_min > 0) {
       console.log(
         "[DIFF MIN]",
@@ -469,27 +498,31 @@ function MedicaidFunction(props) {
       );
       result.unit = parseInt(diffMin / parseInt(service.rate_per_min, 10));
       result.billedAmt =
-        parseInt(diffMin / parseInt(service.rate_per_min, 10)) * servie.rate;
+        parseInt(diffMin / parseInt(service.rate_per_min, 10)) * service.rate;
     } else {
       result.billedAmt = service.rate;
       result.unit = service.unit;
     }
     return result;
   };
-  const uploadHandler = (data) => {
-    console.log("[DATA UPLOAD]", data);
-    const report = Helper.convertJsonIntoClaims(data);
-    console.log("[Report]", report);
-    const rqst = [];
+  const uploadHandler = (data, billedOn) => {
     try {
+      console.log("[DATA UPLOAD]", data, billedOn);
+      const report = Helper.convertJsonIntoClaims(data);
+      console.log("[Report]", report);
+      const rqst = [];
+
       report.forEach((item) => {
-        console.log("[REPORT 1]", report);
+        console.log("[REPORT 1]", item, serviceList);
         const findClient = patientList.find(
           (p) => item.name?.toLowerCase() === p.name?.toLowerCase()
         );
         const findService = serviceList.find(
-          (s) => item.service?.toLowerCase() === s.code?.toLowerCase()
+          (s) =>
+            item.service?.toString().toLowerCase() ===
+            s.code?.toString().toLowerCase()
         );
+        console.log("[FIND SERVICE]", findService, item);
         const billInfo = serviceInfoHandler(
           item.dos,
           item.start,
@@ -498,17 +531,19 @@ function MedicaidFunction(props) {
         );
         const params = {
           provider: "Medicaid",
-          client_name: item.name,
+          client_name: item.name?.toUpperCase(),
           client_id: findClient?.id,
           client_code: findClient?.patientCd,
           date_of_service: item.dos,
-          dos_start: item.start,
-          dos_end: item.end,
+          dos_start: billInfo.startTm,
+          dos_end: billInfo.endTm,
           service_code: findService?.code,
           service_desc: findService?.description,
           service_id: findService?.id,
           billed_amt: billInfo?.billedAmt,
-          billed_on: new Date(),
+          employee: item.employee,
+          service_location: item.location,
+          billed_on: moment(new Date(billedOn)).format("YYYY-MM-DD"),
 
           unit: billInfo?.unit,
           status: "Pending",
@@ -533,14 +568,16 @@ function MedicaidFunction(props) {
         }
         rqst.push(params);
       });
+
+      console.log("[rqst]", rqst, dataSource);
+      setIsUploadFormModal(false);
+      if (rqst?.length) {
+        props.createClaim(rqst);
+      } else {
+        TOAST.ok("DONE");
+      }
     } catch (ex) {
-      console.log("[Ex]", ex.toString());
-    }
-    console.log("[rqst]", rqst, dataSource);
-    if (rqst?.length) {
-      //props.createPatient(rqst);
-    } else {
-      TOAST.ok("DONE");
+      console.log("[Ex]", ex);
     }
   };
   if (props.patients?.status === ACTION_STATUSES.SUCCEED) {
@@ -551,6 +588,12 @@ function MedicaidFunction(props) {
     serviceList = props.services.data;
     props.resetListServices();
   }
+  const createUploadFormHandler = () => {
+    setIsUploadFormModal(true);
+  };
+  const closeUploadFormModalHandler = () => {
+    setIsUploadFormModal(false);
+  };
   return (
     <>
       <GridContainer>
@@ -559,6 +602,9 @@ function MedicaidFunction(props) {
             <CardHeader color="success">
               <Grid container justifyContent="space-between">
                 <h4 className={classes.cardTitleWhite}>Claim Setup</h4>
+                <h4 className={classes.cardTitleWhite}>{`$${parseFloat(
+                  grandTotal
+                ).toFixed(2)}`}</h4>
               </Grid>
             </CardHeader>
             <CardBody>
@@ -607,7 +653,36 @@ function MedicaidFunction(props) {
                 >
                   ADD Claim
                 </Button>
-                <Upload uploadHandler={uploadHandler} />
+                <Button
+                  onClick={() => createUploadFormHandler()}
+                  variant="contained"
+                  style={{
+                    border: "solid 1px #2196f3",
+                    color: "white",
+                    background: "#2196f3",
+                    fontFamily: "Roboto",
+                    fontSize: "12px",
+                    fontWeight: 500,
+
+                    fontStretch: "normal",
+                    fontStyle: "normal",
+                    lineHeight: 1.71,
+                    letterSpacing: "0.4px",
+                    textAlign: "left",
+                    cursor: "pointer",
+                  }}
+                  component="span"
+                  startIcon={<AddIcon />}
+                >
+                  Upload Claim
+                </Button>
+                {isUploadFormModal && (
+                  <Uploader
+                    closeFormModalHandler={closeUploadFormModalHandler}
+                    uploadHandler={uploadHandler}
+                    isOpen={isUploadFormModal}
+                  />
+                )}
                 {isAddGroupButtons && (
                   <div
                     style={{
@@ -683,12 +758,25 @@ function MedicaidFunction(props) {
           isOpen={isFormModal}
           isEdit={false}
           item={item}
+          patientList={patientList}
+          serviceList={serviceList}
           closeFormModalHandler={closeFormModalHandler}
         />
       )}
     </>
   );
 }
+
+const mapStateToProps = (store) => ({
+  patients: patientListStateSelector(store),
+  claims: claimListStateSelector(store),
+  createClaimState: claimCreateStateSelector(store),
+  updateClaimState: claimUpdateStateSelector(store),
+  deleteClaimState: claimDeleteStateSelector(store),
+  profileState: profileListStateSelector(store),
+  efts: eftListStateSelector(store),
+  services: serviceListStateSelector(store),
+});
 
 const mapDispatchToProps = (dispatch) => ({
   listPatients: (data) => dispatch(attemptToFetchPatient(data)),

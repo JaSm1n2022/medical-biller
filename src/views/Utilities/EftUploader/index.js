@@ -91,6 +91,7 @@ const EftUploader = (props) => {
         service_cd: payload?.service,
         service_desc: payload?.serviceDesc,
         service_mod: payload?.modifier,
+        comments: payload?.comments,
         dos: moment(new Date(`${payload?.dos} 17:00`)).format(
           "YYYY-MM-DD HH:mm"
         ),

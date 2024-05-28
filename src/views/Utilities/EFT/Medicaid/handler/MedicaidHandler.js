@@ -37,14 +37,14 @@ class MedicaidHandler {
       },
       {
         defaultFlex: 1,
-        visible: false,
+
         minWidth: 100,
         name: "service_cd",
         header: "Service",
       },
       {
         defaultFlex: 1,
-        visible: false,
+
         minWidth: 100,
         name: "service_mod",
         header: "Modifier",
@@ -86,6 +86,12 @@ class MedicaidHandler {
         minWidth: 120,
         name: "status",
         header: "Status",
+      },
+      {
+        defaultFlex: 1,
+        minWidth: 300,
+        name: "comments",
+        header: "Comments",
       },
     ];
   }

@@ -37,8 +37,7 @@ let uoms = [];
 let patients = [];
 let services = [];
 let isProcessDone = true;
-let isPatientListDone = true;
-let isServiceListDone = true;
+
 function getModalStyle() {
   const top = 25;
   const left = 25;
@@ -89,10 +88,7 @@ function MedicaidForm(props) {
   const [generalForm, setGeneralForm] = useState({});
   const [detailForm, setDetailForm] = useState([]);
   const [isRefresh, setIsRefresh] = useState(false);
-  const [isPrintForm, setIsPrintFrom] = useState(false);
-  const [modalStyle] = React.useState(getModalStyle);
-  const [isPatientCollection, setIsPatientCollection] = useState(true);
-  const [isServiceCollection, setIsServiceCollection] = useState(true);
+
   const { isOpen } = props;
 
   const general = [
@@ -129,6 +125,15 @@ function MedicaidForm(props) {
       label: "EFT Number",
       name: "eftNumber",
       value: "-",
+      disabled: props.mode && props.mode === "view" ? true : false,
+    },
+    {
+      id: "employee",
+      component: "textfield",
+      placeholder: "Provider",
+      label: "Provider",
+      name: "employee",
+      value: "",
       disabled: props.mode && props.mode === "view" ? true : false,
     },
   ];
@@ -197,6 +202,13 @@ function MedicaidForm(props) {
       type: "number",
     },
     {
+      id: "location",
+      component: "textfield",
+      placeholder: "Location",
+      label: "Location",
+      name: "location",
+    },
+    {
       id: "comments",
       component: "textfield",
       placeholder: "Comments",
@@ -217,51 +229,37 @@ function MedicaidForm(props) {
       props.profileState.data &&
       props.profileState.data.length
     ) {
-      const userProfile = props.profileState.data[0];
-      isPatientListDone = false;
-      isServiceListDone = false;
-      props.listPatients({ companyId: userProfile.companyId });
-      props.listServices({ companyId: userProfile.companyId });
+      //  isPatientListDone = false;
+      // isServiceListDone = false;
+      // props.listPatients({ companyId: userProfile.companyId });
+      // props.listServices({ companyId: userProfile.companyId });
     }
   }, []);
-  useEffect(() => {}, [props.item]);
+
   useEffect(() => {
-    if (
-      !isPatientCollection &&
-      props.patients?.status === ACTION_STATUSES.SUCCEED
-    ) {
-      const data = props.patients.data || [];
-      patients = [];
-      data.forEach((e) => {
-        e.label = e.name;
-        e.value = e.name;
-        e.description = e.name;
-        e.category = "patient";
-        patients.push(e);
-      });
-      isPatientListDone = true;
+    console.log("[props.serviceList", props.serviceList);
+    const data = props.serviceList || [];
+    services = [];
+    data.forEach((e) => {
+      e.name = e.code;
+      e.label = e.name;
+      e.value = e.name;
+      e.category = "service";
+      services.push(e);
+    });
+  }, [props.serviceList]);
+  useEffect(() => {
+    const data = props.patientList || [];
+    patients = [];
+    data.forEach((e) => {
+      e.name = e.name;
+      e.label = e.name;
+      e.value = e.name;
+      e.category = "patient";
+      patients.push(e);
+    });
+  }, [props.patientList]);
 
-      setIsPatientCollection(true);
-    }
-    if (
-      !isServiceCollection &&
-      props.services?.status === ACTION_STATUSES.SUCCEED
-    ) {
-      const data = props.services.data || [];
-      services = [];
-      data.forEach((e) => {
-        e.name = e.code;
-        e.label = e.name;
-        e.value = e.name;
-        e.category = "service";
-        services.push(e);
-      });
-      isServiceListDone = true;
-
-      props.resetListServices();
-      setIsServiceCollection(true);
-    }
-  }, [isPatientCollection, isServiceCollection]);
   const validateFormHandler = () => {
     console.log("[Print Handler]", generalForm, detailForm);
     props.createClaimHandler(generalForm, detailForm, props.mode);
@@ -396,27 +394,11 @@ function MedicaidForm(props) {
   const clearModalHandler = () => {
     props.closeFormModalHandler();
   };
-  if (
-    isServiceCollection &&
-    props.services?.status === ACTION_STATUSES.SUCCEED
-  ) {
-    setIsServiceCollection(false);
-  }
-  if (
-    isPatientCollection &&
-    props.patients?.status === ACTION_STATUSES.SUCCEED
-  ) {
-    setIsPatientCollection(false);
-  }
-  if (
-    isServiceCollection &&
-    props.services?.status === ACTION_STATUSES.SUCCEED
-  ) {
-    setIsServiceCollection(false);
-  }
+  console.log("[Props Services]", props.services);
+  console.log("[Props Patient]", props.patients);
 
   console.log("[general form]", generalForm, detailForm);
-  isProcessDone = isPatientListDone && isServiceListDone;
+
   return (
     <ReactModal
       style={{
@@ -659,15 +641,8 @@ function MedicaidForm(props) {
 }
 const mapStateToProps = (store) => ({
   profileState: profileListStateSelector(store),
-  patients: patientListStateSelector(store),
-  services: serviceListStateSelector(store),
+  //  patients: patientListStateSelector(store),
+  //  services: serviceListStateSelector(store),
 });
 
-const mapDispatchToProps = (dispatch) => ({
-  listPatients: (data) => dispatch(attemptToFetchPatient(data)),
-  resetListPatients: () => dispatch(resetFetchPatientState()),
-  listServices: (data) => dispatch(attemptToFetchService(data)),
-  resetListServices: () => dispatch(resetFetchServiceState()),
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(MedicaidForm);
+export default connect(mapStateToProps, null)(MedicaidForm);

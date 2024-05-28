@@ -6,7 +6,7 @@ class PatientHandler {
       { width: 92, name: "actions", header: "Actions", visible: main },
       {
         defaultFlex: 1,
-        minWidth: 200,
+        width: 100,
         name: "created",
         header: "Created",
       },
@@ -15,6 +15,12 @@ class PatientHandler {
         minWidth: 200,
         name: "patientCd",
         header: "Patient",
+      },
+      {
+        defaultFlex: 1,
+        minWidth: 200,
+        name: "name",
+        header: "Name",
       },
       {
         visible: false,

@@ -266,6 +266,7 @@ class Helper {
         record.billedAmt = json["BILLED AMT"] || "";
         record.paidAmt = json["PAID AMT"] || "";
         record.status = json["STATUS"] || "";
+        record.comments = json["COMMENTS"] || "";
         if (record.dos && record.dos.length === 5) {
           record.dos = `0${record.dos}`;
         }
@@ -309,6 +310,23 @@ class Helper {
 
     return clients;
   }
+  static isString(input) {
+    return (
+      typeof input === "string" &&
+      Object.prototype.toString.call(input) === "[object String]"
+    );
+  }
+
+  static ExcelDateToJSDate(date) {
+    if (this.isString(date)) {
+      console.log("[ExcelDataToJSDate]", date);
+      return date;
+    }
+    const converted_date = new Date(Math.round((date - 25569) * 864e5));
+    let resp = moment(converted_date).utc().format("YYYY-MM-DD");
+    console.log("[RESP EX[", resp);
+    return resp;
+  }
   static convertJsonIntoClaims(jsonData) {
     console.log("[Json Upload]", jsonData);
     const claims = [];
@@ -318,15 +336,21 @@ class Helper {
       if (json || JSON.stringify(json) !== "{}") {
         record.uuid = index;
         record.indexNumber = index + 1;
-
-        record.name = json["NAME"]?.trim() || "";
-        record.dos = json["DOS"];
-        record.start = json["START"];
-        record.end = json["END"];
-        record.duration = json["DURATION"]?.replace("Hr", "").replace(" ", "");
-        record.code = json["CODE"];
-        record.service = json["SERVICE"];
-        record.location = json["LOCATION"];
+        console.log("[JSON]", json);
+        record.name = json["NAME"] ? json["NAME"].trim() : "";
+        record.dos = json["DOS"] ? this.ExcelDateToJSDate(json["DOS"]) : "";
+        record.start = json["START"] ? json["START"].trim() : "";
+        record.end = json["END"] ? json["END"].trim() : "";
+        record.duration = json["DURATION"]
+          ? json["DURATION"].replace("Hr", "").replace(" ", "")
+          : "";
+        record.code = json["CODE"] ? json["CODE"].trim() : "";
+        record.service = json["SERVICE"]
+          ? json["SERVICE"].toString().trim()
+          : "";
+        record.location = json["LOCATION"] ? json["LOCATION"].trim() : "";
+        record.employee = json["EMPLOYEE"] ? json["EMPLOYEE"].trim() : "";
+        console.log("[PUS RECORD]", record);
         claims.push(record);
       }
     });
