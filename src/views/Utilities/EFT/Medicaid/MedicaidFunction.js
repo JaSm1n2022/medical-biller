@@ -258,14 +258,24 @@ function MedicaidFunction(props) {
       setDataSource([...originalSource]);
     } else {
       const temp = [...originalSource];
-      console.log("[Tempt]", temp);
+      console.log("[Tempt]", temp, keyword);
       let found = temp.filter(
         (data) =>
-          data.code.toLowerCase().indexOf(keyword.toLowerCase()) !== -1 ||
-          data.description.toLowerCase().indexOf(keyword.toLowerCase()) !== -1
+          data.client?.toLowerCase().indexOf(keyword.toLowerCase()) !== -1 ||
+          data.service_cd?.toLowerCase().indexOf(keyword.toLowerCase()) !==
+            -1 ||
+          data.status?.toLowerCase().indexOf(keyword.toLowerCase()) !== -1
       );
-
-      setDataSource(found);
+      console.log("[FOUND]", found);
+      if (found?.length === 0) {
+        TOAST.error("No record found");
+      } else {
+        grandTotal = 0.0;
+        found.forEach((s) => {
+          grandTotal += parseFloat(s.paid_amt || 0);
+        });
+        setDataSource(found);
+      }
     }
   };
 
