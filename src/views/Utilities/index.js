@@ -4,7 +4,7 @@ import GridItem from "components/Grid/GridItem";
 import PlotIcon from "@material-ui/icons/ViewList";
 import EftUploader from "./EftUploader";
 import MedicaidFunction from "./EFT/Medicaid/MedicaidFunction";
-
+import MissingLogs from "./EFT/Report/MissingLogs";
 function Utilities() {
   return (
     <div>
@@ -18,6 +18,11 @@ function Utilities() {
                 tabName: "EFT Medicaid",
                 tabIcon: PlotIcon,
                 tabContent: <MedicaidFunction />,
+              },
+              {
+                tabName: "EFT Missing Logs",
+                tabIcon: PlotIcon,
+                tabContent: <MissingLogs />,
               },
             ]}
           />
