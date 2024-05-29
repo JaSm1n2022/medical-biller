@@ -27,6 +27,8 @@ import MedicaidHandler from "./handler/MedicaidHandler";
 import { attemptToFetchClaim } from "store/actions/claimAction";
 import { resetFetchClaimState } from "store/actions/claimAction";
 import { claimListStateSelector } from "store/selectors/claimSelector";
+import moment from "moment";
+import { ImportExport } from "@material-ui/icons";
 const styles = {
   cardCategoryWhite: {
     "&,& a,& a:hover,& a:focus": {
@@ -120,7 +122,7 @@ function MissingLogs(props) {
         to: dates.to,
       });
       const last90days = moment(new Date(dates.from))
-        .add(90, "days")
+        .add(-90, "days")
         .utc()
         .format("YYYY-MM-DD");
       props.listClaims({
@@ -234,7 +236,7 @@ function MissingLogs(props) {
     props.resetListEfts();
   }
   if (props.claims?.status === ACTION_STATUSES.SUCCEED) {
-    claimList = props.efts.data;
+    claimList = props.claims.data;
     isClaimsDone = true;
     props.resetListClaims();
   }
@@ -275,8 +277,21 @@ function MissingLogs(props) {
   };
   const createMissingLogsHandler = () => {
     const data = [];
-    console.log(["EFT LIST]", eftList, claimList]);
-    //dataSourceHandler(data);
+    console.log("[CREATE EFT LIST]", eftList, claimList);
+    const missing = [];
+    eftList.forEach((s) => {
+      const found = claimList.find(
+        (c) =>
+          s.provider === c.provider &&
+          s.dos === c.date_of_service &&
+          c.service_code?.toString() === s.service_cd?.toString() &&
+          s.client?.toLowerCase() === c.client_name?.toLowerCase()
+      );
+      if (!found) {
+        missing.push(s);
+      }
+    });
+    dataSourceHandler(missing);
   };
   isProcessDone = isEftsDone && isClaimsDone;
   return (
@@ -308,6 +323,7 @@ function MissingLogs(props) {
                 <Button
                   onClick={() => createMissingLogsHandler()}
                   variant="outlined"
+                  color="primary"
                   style={{
                     fontFamily: "Roboto",
                     fontSize: "12px",
@@ -321,7 +337,7 @@ function MissingLogs(props) {
                     cursor: "pointer",
                   }}
                   component="span"
-                  startIcon={<ImportExport />}
+                  startIcon={<AddIcon />}
                 >
                   {" "}
                   Create Missing Logs{" "}
